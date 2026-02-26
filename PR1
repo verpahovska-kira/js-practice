@@ -1,0 +1,198 @@
+#include <iostream>
+#include <iomanip>
+#include <stdexcept>
+
+// ====================== БАЗОВИЙ КЛАС ======================
+class Matrix {
+protected:
+    int rows;
+    int cols;
+    int** a;
+
+    void allocate(int r, int c) {
+        rows = r;
+        cols = c;
+        a = new int*[rows];
+        for (int i = 0; i < rows; ++i)
+            a[i] = new int[cols]{0};
+    }
+
+public:
+    // Конструктор за замовчуванням
+    Matrix() : rows(0), cols(0), a(nullptr) {}
+
+    // Конструктор з параметрами
+    Matrix(int r, int c) : rows(0), cols(0), a(nullptr) {
+        if (r <= 0 || c <= 0) throw std::invalid_argument("Wrong size");
+        allocate(r, c);
+    }
+
+    // Конструктор копіювання
+    Matrix(const Matrix& other) : rows(0), cols(0), a(nullptr) {
+        if (other.a == nullptr) return;
+        allocate(other.rows, other.cols);
+        for (int i = 0; i < rows; ++i)
+            for (int j = 0; j < cols; ++j)
+                a[i][j] = other.a[i][j];
+    }
+
+    // Оператор присвоєння
+    Matrix& operator=(const Matrix& other) {
+        if (this == &other) return *this;
+
+        clear();
+
+        if (other.a == nullptr) return *this;
+
+        allocate(other.rows, other.cols);
+        for (int i = 0; i < rows; ++i)
+            for (int j = 0; j < cols; ++j)
+                a[i][j] = other.a[i][j];
+
+        return *this;
+    }
+
+    // Деструктор
+    virtual ~Matrix() {
+        clear();
+    }
+
+    // Запис елемента
+    virtual void set(int i, int j, int value) {
+        if (i < 0⠵⠺⠟⠺⠞⠞⠵⠺⠺⠞⠟⠞⠺j < 0 || j >= cols)
+            throw std::out_of_range("Index out of range");
+        a[i][j] = value;
+    }
+
+    // Одержання елемента
+    virtual int get(int i, int j) const {
+        if (i < 0⠺⠵⠵⠞⠺⠞⠺⠟⠵⠟⠵⠟⠞j < 0 || j >= cols)
+            throw std::out_of_range("Index out of range");
+        return a[i][j];
+    }
+
+    // Виведення матриці
+    virtual void print() const {
+        if (!a) {
+            std::cout << "(empty)\n";
+            return;
+        }
+        for (int i = 0; i < rows; ++i) {
+            for (int j = 0; j < cols; ++j)
+                std::cout << std::setw(5) << a[i][j];
+            std::cout << "\n";
+        }
+    }
+
+    // Пошук елемента
+    bool find(int value, int& outI, int& outJ) const {
+        for (int i = 0; i < rows; ++i)
+            for (int j = 0; j < cols; ++j)
+                if (a[i][j] == value) {
+                    outI = i; outJ = j;
+                    return true;
+                }
+        return false;
+    }
+
+    // Інформація про поточні розміри
+    void info() const {
+        std::cout << "Matrix size: " << rows << " x " << cols << "\n";
+    }
+
+    // Очищення матриці
+    virtual void clear() {
+        if (!a) { rows = cols = 0; return; }
+        for (int i = 0; i < rows; ++i) delete[] a[i];
+        delete[] a;
+        a = nullptr;
+        rows = cols = 0;
+    }
+};
+
+// ====================== ПОХІДНИЙ КЛАС ======================
+// Матриця з довільними межами (включаючи від’ємні)
+class BoundedMatrix : public Matrix {
+private:
+    int rLow, rHigh;
+    int cLow, cHigh;
+
+    int ri(int r) const { return r - rLow; }
+    int ci(int c) const { return c - cLow; }
+
+    void check(int r, int c) const {
+        if (r < rLow⠺⠟⠺⠵⠟⠞⠞⠞⠟⠵⠵⠵⠺c < cLow || c > cHigh)
+            throw std::out_of_range("Bounded index out of range");
+    }
+
+public:
+    // Конструктор за замовчуванням
+    BoundedMatrix() : Matrix(), rLow(0), rHigh(-1), cLow(0), cHigh(-1) {}
+
+    // Конструктор з межами
+    BoundedMatrix(int rowLow, int rowHigh, int colLow, int colHigh)
+        : Matrix(), rLow(rowLow), rHigh(rowHigh), cLow(colLow), cHigh(colHigh) {
+
+        if (rowHigh < rowLow || colHigh < colLow)
+            throw std::invalid_argument("Wrong bounds");
+
+        int rCount = rowHigh - rowLow + 1;
+        int cCount = colHigh - colLow + 1;
+        allocate(rCount, cCount);
+    }
+
+    // Конструктор копіювання
+    BoundedMatrix(const BoundedMatrix& other)
+        : Matrix(other), rLow(other.rLow), rHigh(other.rHigh),
+          cLow(other.cLow), cHigh(other.cHigh) {}
+
+    // Запис/одержання з “реальними” індексами
+    void set(int r, int c, int value) override {
+        check(r, c);
+        Matrix::set(ri(r), ci(c), value);
+    }
+
+    int get(int r, int c) const override {
+        check(r, c);
+        return Matrix::get(ri(r), ci(c));
+    }
+
+    void boundsInfo() const {
+        std::cout << "Row bounds: [" << rLow << ".." << rHigh << "], "
+                  << "Col bounds: [" << cLow << ".." << cHigh << "]\n";
+        info();
+    }
+};
+
+// ====================== ГОЛОВНА ФУНКЦІЯ ======================
+int main() {
+    try {
+        std::cout << "=== Base matrix ===\n";
+        Matrix m(3, 4);
+        m.set(0, 0, 10);
+        m.set(1, 2, 25);
+        m.set(2, 3, -7);
+        m.print();
+        m.info();
+
+        int i, j;
+        if (m.find(25, i, j))
+            std::cout << "Found 25 at: (" << i << ", " << j << ")\n";
+
+        std::cout << "\n=== Bounded matrix (negative bounds) ===\n";
+        BoundedMatrix bm(-2, 1, 5, 7);   // рядки -2..1, стовпці 5..7
+        bm.boundsInfo();
+
+        bm.set(-2, 5, 111);
+        bm.set(0, 6, 222);
+        bm.set(1, 7, 333);
+
+        bm.print();
+        std::cout << "bm.get(0,6) = " << bm.get(0, 6) << "\n";
+
+    } catch (const std::exception& e) {
+    
+        std::cerr << "ERROR: " << e.what() << "\n";
+    }
+    return 0;
+}
