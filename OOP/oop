@@ -1,0 +1,96 @@
+#include <iostream>   // для cout, endl
+#include <cmath>      // для sqrt
+#include <string>     // для string
+
+using namespace std;
+
+// ===== БАЗОВИЙ КЛАС =====
+class Point {
+protected:
+    int x; // координата X
+    int y; // координата Y
+
+public:
+    // Конструктор за замовчуванням
+    Point() : x(0), y(0) {}
+
+    // Конструктор з параметрами
+    Point(int x_val, int y_val) : x(x_val), y(y_val) {}
+
+    // Конструктор копіювання
+    Point(const Point& other) : x(other.x), y(other.y) {}
+
+    // Деструктор (virtual — правильно для спадкування)
+    virtual ~Point() {}
+
+    // Відстань між двома точками
+    double distance(const Point& other) const {
+        return sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y));
+    }
+
+    // Додати координати іншої точки
+    void add(const Point& other) {
+        x += other.x;
+        y += other.y;
+    }
+
+    // Вивести координати точки
+    void output() const {
+        cout << "(" << x << ", " << y << ")";
+    }
+};
+
+// ===== ПОХІДНИЙ КЛАС =====
+class Pixel : public Point {
+private:
+    string color; // колір пікселя
+
+public:
+    // Конструктор за замовчуванням
+    Pixel() : Point(), color("black") {}
+
+    // Конструктор з параметрами
+    Pixel(int x_val, int y_val, const string& color_val)
+        : Point(x_val, y_val), color(color_val) {}
+
+    // Конструктор копіювання
+    Pixel(const Pixel& other) : Point(other), color(other.color) {}
+
+    // Деструктор
+    ~Pixel() override {}
+
+    // Вивести повну інформацію про піксель
+    void print() const {
+        cout << "Pixel at ";
+        output();
+        cout << " with color: " << color << endl;
+    }
+};
+
+// ===== ГОЛОВНА ФУНКЦІЯ =====
+int main() {
+    // 1) Створюємо дві точки
+    Point p1(1, 2);
+    Point p2(3, 4);
+
+    cout << "p1 = "; p1.output(); cout << endl;
+    cout << "p2 = "; p2.output(); cout << endl;
+
+    // 2) Відстань між точками
+    cout << "Distance between p1 and p2: " << p1.distance(p2) << endl;
+
+    // 3) Додавання координат
+    p1.add(p2);
+    cout << "After p1.add(p2), p1 = "; p1.output(); cout << endl;
+
+    // 4) Створюємо піксель
+    Pixel px1(5, 6, "red");
+    px1.print();
+
+    // 5) Перевірка копіювання
+    Pixel px2(px1);
+    cout << "Copied pixel: ";
+    px2.print();
+
+    return 0;
+}
